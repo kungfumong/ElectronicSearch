@@ -7,12 +7,27 @@ import java.net.HttpURLConnection;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.text.DateFormat;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.StringTokenizer;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import org.apache.http.Header;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.apache.http.message.BasicHeader;
+import org.elasticsearch.client.Response;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -43,7 +58,6 @@ public class HomeController {
 	 */
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public String home(Locale locale, Model model) {
-
 		logger.info("Welcome home! The client locale is {}.", locale);
 
 		Date date = new Date();
@@ -55,13 +69,38 @@ public class HomeController {
 
 		return "home";
 	}
+	
+	
+	@RequestMapping(value = "/asdf", method = sRequestMethod.GET)
+	public String asdf(Locale locale, Model model) throws IOException {
+
+		Header[] headers = { new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json"),
+				new BasicHeader("Authorization", "Basic YWRtaW46ZG9uZ3lhbmc=") };
+		
+		RestClient r = RestClient
+				.builder(new HttpHost("dfe676fded9f79feafed7b9ac3eb4149.ap-northeast-1.aws.found.io",9243,"https"))
+				.setDefaultHeaders(headers).build();
+		
+		Map<String, String> paramMap = Collections.singletonMap("pretty", "true");
+
+		Response response = r.performRequest(
+		    "GET",
+		    "/",
+		    paramMap
+		);
+
+		System.out.println(response.toString());
+
+		return "home";
+	}
 
 	@RequestMapping(value = "/list", method = RequestMethod.GET)
 	public String list(Locale locale, Model model) {
+
 		String line;
 		try {
-			URL url = new URL(
-					"http://www.kobis.or.kr/kobisopenapi/webservice/rest/movie/searchMovieList.json?key="+key+"&itemPerPage=5");
+			URL url = new URL("http://www.kobis.or.kr/kobisopenapi/webservice/rest/movie/searchMovieList.json?key="
+					+ key + "&itemPerPage=5");
 			conn = (HttpURLConnection) url.openConnection();
 
 			conn.setRequestMethod("GET");
@@ -81,9 +120,9 @@ public class HomeController {
 			json = (JSONObject) json.get("movieListResult");
 			jsonArr = (JSONArray) json.get("movieList");
 			json.clear();
-			
-			for(int i=0; i<jsonArr.size();i++) {
-				json = (JSONObject)jsonArr.get(i);
+
+			for (int i = 0; i < jsonArr.size(); i++) {
+				json = (JSONObject) jsonArr.get(i);
 				System.out.println(json.get("movieCd"));
 				System.out.println(json.get("prdtYear"));
 				System.out.println(json.get("genreAlt"));
@@ -97,6 +136,6 @@ public class HomeController {
 			e.printStackTrace();
 		}
 
-		return "home";
+		return "list";
 	}
 }
